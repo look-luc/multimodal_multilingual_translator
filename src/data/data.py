@@ -159,8 +159,3 @@ def load_all_datasets(streaming: bool = False):
             print(f"Skipping SignVerse {lang_name}: {e}")
 
     return loaded_datasets
-
-if __name__ == "__main__":
-    # Set streaming=True if you want to avoid downloading multi-terabyte datasets locally
-    all_data = load_all_datasets(streaming=True)
-    print("Dataset mapping initialization complete.")
