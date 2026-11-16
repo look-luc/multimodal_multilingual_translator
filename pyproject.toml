@@ -8,11 +8,18 @@ authors = [
 ]
 requires-python = ">=3.11"
 dependencies = [
+    "accelerate>=1.16.0",
     "datasets>=5.2.0",
     "huggingface-hub>=2.4.0",
+    "matplotlib>=3.11.2",
+    "peft>=0.21.3",
     "qwen-omni-utils>=0.0.9",
+    "scipy>=1.17.1",
     "torch>=2.15.0",
+    "torchaudio>=2.11.1",
+    "torchvision>=0.29.2",
     "transformers>=5.23.0",
+    "wandb>=0.31.0",
 ]
 
 [project.scripts]
