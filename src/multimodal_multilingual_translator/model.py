@@ -14,13 +14,12 @@ from peft import get_peft_model, LoraConfig, TaskType
 
 DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
 
-class Input_Video_PreProcessor: # Stage 1: Inference-only feature extractor
+class Input_Video_PreProcessor:
     def __init__(self, model_name: str = "facebook/sapiens2-pose-1b") -> None:
         self.processor = AutoImageProcessor.from_pretrained(model_name)
         self.model = Sapiens2ForPoseEstimation.from_pretrained(model_name, device_map=DEVICE)
 
 class VectorQuantizer(nn.Module):
-    """Vector Quantization layer for learning discrete sign motion tokens."""
     def __init__(self, num_embeddings: int, embedding_dim: int, commitment_cost: float = 0.25):
         super().__init__()
         self.num_embeddings = num_embeddings
@@ -31,11 +30,9 @@ class VectorQuantizer(nn.Module):
         self.embedding.weight.data.uniform_(-1.0 / num_embeddings, 1.0 / num_embeddings)
 
     def forward(self, inputs):
-        # inputs shape: [Batch, Channels, Temporal] -> permute to [Batch, Temporal, Channels]
         inputs = inputs.permute(0, 2, 1).contiguous()
         flat_input = inputs.view(-1, self.embedding_dim)
 
-        # Calculate L2 distance between inputs and codebook weights
         distances = (
             torch.sum(flat_input**2, dim=1, keepdim=True)
             + torch.sum(self.embedding.weight**2, dim=1)
@@ -45,18 +42,15 @@ class VectorQuantizer(nn.Module):
         encoding_indices = torch.argmin(distances, dim=1)
         quantized = self.embedding(encoding_indices).view(inputs.shape)
 
-        # Loss computation
         vq_loss = F.mse_loss(quantized.detach(), inputs)
         commitment_loss = F.mse_loss(quantized, inputs.detach())
         loss = vq_loss + self.commitment_cost * commitment_loss
 
-        # Straight-through estimator
         quantized = inputs + (quantized - inputs).detach()
 
-        # Permute back to [Batch, Channels, Temporal]
         return quantized.permute(0, 2, 1).contiguous(), loss, encoding_indices
 
-class ThreeD_lifter(nn.Module): # Stage 3: Trained from scratch (VQ-VAE Codebook)
+class ThreeD_lifter(nn.Module):
     def __init__(self, repo_id: str = "naver/multi-hmr", filename: str, input_dim: int = 132) -> None:
         super().__init__()
         try:
@@ -67,7 +61,6 @@ class ThreeD_lifter(nn.Module): # Stage 3: Trained from scratch (VQ-VAE Codebook
         self.vq_codebook_size = 512
         self.latent_dim = 512
 
-        # 1D Temporal Convolutional Encoder
         self.encoder = nn.Sequential(
             nn.Conv1d(input_dim, 256, kernel_size=4, stride=2, padding=1),
             nn.BatchNorm1d(256),
@@ -76,10 +69,8 @@ class ThreeD_lifter(nn.Module): # Stage 3: Trained from scratch (VQ-VAE Codebook
             nn.BatchNorm1d(self.latent_dim),
         )
 
-        # Vector Quantizer Codebook
         self.vq_vae = VectorQuantizer(self.vq_codebook_size, self.latent_dim)
 
-        # 1D Temporal Convolutional Decoder
         self.decoder = nn.Sequential(
             nn.ConvTranspose1d(self.latent_dim, 256, kernel_size=4, stride=2, padding=1),
             nn.BatchNorm1d(256),
@@ -88,7 +79,6 @@ class ThreeD_lifter(nn.Module): # Stage 3: Trained from scratch (VQ-VAE Codebook
         )
 
     def forward(self, x):
-        # x shape: [Batch, Channels, Temporal]
         enc_out = self.encoder(x)
         quantized, vq_loss, indices = self.vq_vae(enc_out)
         recon = self.decoder(quantized)
@@ -103,10 +93,10 @@ class ThreeD_lifter(nn.Module): # Stage 3: Trained from scratch (VQ-VAE Codebook
             total_recon_loss = 0.0
             total_vq_loss = 0.0
             for batch in motion_dataset:
-                poses = batch["skeleton_poses"].to(DEVICE) # Shape: [B, C, T]
+                poses = batch["skeleton_poses"].to(DEVICE)
 
                 recon, vq_loss, _ = self.forward(poses)
-                recon_loss = F.l1_loss(recon, poses) # L1 loss yields sharper sign trajectory reconstructions
+                recon_loss = F.l1_loss(recon, poses)
 
                 loss = recon_loss + vq_loss
 
@@ -119,13 +109,12 @@ class ThreeD_lifter(nn.Module): # Stage 3: Trained from scratch (VQ-VAE Codebook
 
             print(f"Epoch [{epoch+1}/{epochs}] | Recon Loss: {total_recon_loss:.4f} | VQ Loss: {total_vq_loss:.4f}")
 
-class Multimodal_Understanding_Audio_Generation: # Stage 2: Fine-tuned Omni Model + Adapters
+class Multimodal_Understanding_Audio_Generation:
     def __init__(self, model_path: str = "Qwen/Qwen3-Omni-30B-A3B-Instruct") -> None:
         self.model = Qwen3OmniMoeForConditionalGeneration.from_pretrained(model_path, device_map=DEVICE)
         self.processor = Qwen3OmniMoeProcessor.from_pretrained(model_path)
         self.audio_adapter = torch.nn.Linear(768, self.model.config.hidden_size).to(DEVICE)
 
-        # Apply PEFT LoRA to Qwen3-Omni
         peft_config = LoraConfig(
             task_type=TaskType.CAUSAL_LM,
             inference_mode=False,
@@ -170,12 +159,10 @@ class Multimodal_Understanding_Audio_Generation: # Stage 2: Fine-tuned Omni Mode
                         loss.backward()
                         optimizer.step()
 
-class Text_to_3D_Motion_Generation: # Stage 4: Fine-tuned Causal Decoder
+class Text_to_3D_Motion_Generation:
     def __init__(self, model_name: str = "Qwen/Qwen2.5-Coder-1.5B-Instruct") -> None:
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForCausalLM.from_pretrained(model_name, device_map=DEVICE)
-
-        # Motion head maps LLM hidden states to discrete VQ-VAE codebook indices (512)
         self.motion_head = torch.nn.Linear(self.model.config.hidden_size, 512).to(DEVICE)
 
     def train_generator(self, text_motion_dataset, epochs: int = 3, lr: float = 5.0e-5):
@@ -189,7 +176,7 @@ class Text_to_3D_Motion_Generation: # Stage 4: Fine-tuned Causal Decoder
         for epoch in range(epochs):
             for batch in text_motion_dataset:
                 input_ids = batch["input_ids"].to(DEVICE)
-                target_motion_tokens = batch["motion_tokens"].to(DEVICE) # Discrete indices from Stage 3 VQ
+                target_motion_tokens = batch["motion_tokens"].to(DEVICE)
 
                 outputs = self.model(input_ids=input_ids, output_hidden_states=True)
                 hidden_states = outputs.hidden_states[-1]

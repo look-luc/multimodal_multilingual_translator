@@ -20,7 +20,6 @@ def load_all_datasets(streaming: bool = False):
 
     print("--- Loading Audio-to-Text & Speech Datasets ---")
 
-    # 1. Google WAXAL (ASR)
     loaded_datasets["waxal_asr"] = {}
     for lang_name, code in WAXAL_LANG_CODE.items():
         try:
@@ -31,7 +30,6 @@ def load_all_datasets(streaming: bool = False):
         except Exception as e:
             print(f"Skipping WAXAL ASR {lang_name}: {e}")
 
-    # 2. Google WAXAL (TTS)
     loaded_datasets["waxal_tts"] = {}
     for lang_name, code in WAXAL_LANG_CODE_TTS.items():
         try:
@@ -42,7 +40,6 @@ def load_all_datasets(streaming: bool = False):
         except Exception as e:
             print(f"Skipping WAXAL TTS {lang_name}: {e}")
 
-    # 3. Google FLEURS
     loaded_datasets["fleurs"] = {}
     for lang_name, code in FLEURS_LANG_CODES.items():
         try:
@@ -53,7 +50,6 @@ def load_all_datasets(streaming: bool = False):
         except Exception as e:
             print(f"Skipping FLEURS {lang_name}: {e}")
 
-    # 4. Mapudungun (ivangtorre / second_americas_nlp_2022 style mapping)
     loaded_datasets["ivangtorre_americas"] = {}
     for lang_name, code in IVANGTORRE_LANG_CODE.items():
         try:
@@ -64,7 +60,6 @@ def load_all_datasets(streaming: bool = False):
         except Exception as e:
             print(f"Skipping Americas NLP {lang_name}: {e}")
 
-    # 5. QCRI QASR (Arabic ASR)
     loaded_datasets["qcri_qasr"] = {}
     for lang_name, code in QCRI_QASR_LANGUAGES.items():
         try:
@@ -75,7 +70,6 @@ def load_all_datasets(streaming: bool = False):
         except Exception as e:
             print(f"Skipping QCRI QASR {lang_name}: {e}")
 
-    # 6. Casablanca (Arabic Dialects ASR)
     loaded_datasets["casablanca"] = {}
     for dialect_name, config in CASABLANCA_CONFIGS.items():
         try:
@@ -86,10 +80,8 @@ def load_all_datasets(streaming: bool = False):
         except Exception as e:
             print(f"Skipping Casablanca {dialect_name}: {e}")
 
-
     print("\n--- Loading Text-to-Text Datasets ---")
 
-    # 7. AfriQA
     loaded_datasets["afriqa"] = {}
     for lang_name, code in AFRIQA_LANG_CODE.items():
         try:
@@ -100,7 +92,6 @@ def load_all_datasets(streaming: bool = False):
         except Exception as e:
             print(f"Skipping AfriQA {lang_name}: {e}")
 
-    # 8. Americas Text Datasets
     loaded_datasets["americas_text"] = {}
     for lang_name, code in AMERICAS_LANG_CODE.items():
         try:
@@ -111,7 +102,6 @@ def load_all_datasets(streaming: bool = False):
         except Exception as e:
             print(f"Skipping Americas text {lang_name}: {e}")
 
-    # 9. SEACrowd Parallel Asian Treebank
     loaded_datasets["seacrowd_asian"] = {}
     for lang_name, code in SEACROWD_PARALLEL_ASIAN_TREEBANK_LANGS.items():
         try:
@@ -122,7 +112,6 @@ def load_all_datasets(streaming: bool = False):
         except Exception as e:
             print(f"Skipping SEACrowd Asian {lang_name}: {e}")
 
-    # 10. FLORES-Plus (FLORES-200)
     loaded_datasets["flores_plus"] = {}
     for lang_name, code in FLORES_PLUS_CODES.items():
         try:
@@ -133,10 +122,8 @@ def load_all_datasets(streaming: bool = False):
         except Exception as e:
             print(f"Skipping FLORES-Plus {lang_name}: {e}")
 
-
     print("\n--- Loading Sign Language Datasets ---")
 
-    # 11. How2Sign
     loaded_datasets["how2sign"] = {}
     for lang_name, code in HOW2SIGN.items():
         try:
@@ -147,7 +134,6 @@ def load_all_datasets(streaming: bool = False):
         except Exception as e:
             print(f"Skipping How2Sign {lang_name}: {e}")
 
-    # 12. SignVerse / Sign Language Datasets
     loaded_datasets["signverse"] = {}
     for lang_name, code in SIGNVERSE_LANG_CODES.items():
         try:
