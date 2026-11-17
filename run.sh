@@ -7,7 +7,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=230G
 #SBATCH --time=24:00:00
-#SBATCH --output=/projects/%u/Multilingual-multimodal-translation/logs/%j.log
+#SBATCH --output=/projects/%u/multimodal_multilingual_translator/logs/%j.log
 #SBATCH --job-name=multimodel-multilingual-translate
 #SBATCH --account=ucb-general
 #SBATCH --mail-type=END,FAIL

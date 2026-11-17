@@ -1,4 +1,6 @@
-from codes import (
+from datasets import load_dataset
+
+from src.data.codes import (
     AFRIQA_LANG_CODE,
     AMERICAS_LANG_CODE,
     CASABLANCA_CONFIGS,
@@ -12,7 +14,6 @@ from codes import (
     WAXAL_LANG_CODE,
     WAXAL_LANG_CODE_TTS,
 )
-from datasets import load_dataset
 
 
 def load_all_datasets(streaming: bool = False):
