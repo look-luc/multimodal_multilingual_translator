@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from huggingface_hub import hf_hub_download
+from peft import LoraConfig, TaskType, get_peft_model
 from transformers import (
     AutoImageProcessor,
     AutoModelForCausalLM,
@@ -10,7 +11,6 @@ from transformers import (
     Qwen3OmniMoeProcessor,
     Sapiens2ForPoseEstimation,
 )
-from peft import get_peft_model, LoraConfig, TaskType
 
 DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
 
@@ -51,7 +51,7 @@ class VectorQuantizer(nn.Module):
         return quantized.permute(0, 2, 1).contiguous(), loss, encoding_indices
 
 class ThreeD_lifter(nn.Module):
-    def __init__(self, repo_id: str = "naver/multi-hmr", filename: str, input_dim: int = 132) -> None:
+    def __init__(self, filename: str, repo_id: str = "naver/multi-hmr", input_dim: int = 132) -> None:
         super().__init__()
         try:
             self.ckpt_path = hf_hub_download(repo_id=repo_id, filename=filename, local_dir="./pretrained_models")
